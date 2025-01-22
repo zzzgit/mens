@@ -1,0 +1,44 @@
+name: Publish
+on:
+  push:
+    paths:
+      - 'package.json'
+    branches: [ "master" ]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+      - name: check version
+        id: check
+        uses: EndBug/version-check@v2
+      - name: No version update in package.json
+        if: steps.check.outputs.changed != 'true'
+        run: |
+          echo "Error: ${{ steps.check.outputs.version }} is not new. Now exiting."
+          exit 1
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install dependencies
+        run: npm ci
+      - name: Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
