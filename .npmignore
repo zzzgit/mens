@@ -1,5 +1,7 @@
-emphasis.syntax.js
-test.js
 .github/
 .vscode/
+.husky
+temp/
+log/
+test/
 eslint.config.js

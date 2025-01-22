@@ -1,27 +1,50 @@
-# markdown-it-tempus
+# Mens
 
-> `<time>` tag plugin for [markdown-it](https://github.com/markdown-it/markdown-it) markdown parser.
+## Description
+This is a cli tool designed to manage ideas. Simply creat, delete, modify, and search for idears.
 
-`@this year@(2025)` => `<time datetime="2025">this year</time>`
+## Features
+- **Sync to gist**: Upload your data to gist and keep sync with it.
 
-Markup uses the same conditions as CommonMark [link](http://spec.commonmark.org/0.15/).
-
-
-## Install
+## Installation
+To install `mens`, run cli:
 
 ```bash
-npm install markdown-it-tempus --save
+npm i mens -g
 ```
 
-## Use
+## Usage
+To add an idea:
 
-```js
-var md = require('markdown-it')()
-            .use(require('markdown-it-tempus'));
-
-md.render('@this year@(2025)') // => '<p><time datetime="2025">this year</time></p>'
+```bash
+mens add 'crazy idear'
 ```
 
-## License
+To list all ideas: 
 
-[MIT](https://github.com/zzzgit/markdown-it-tempus/blob/master/LICENSE)
+```bash
+mens list
+```
+
+To delete an idear:
+
+```bash
+mens remove ID
+```
+
+To modify an idea:
+```bash
+mens modify ID "new content"
+```
+
+## Contributing
+Contributions are welcome! 
+
+
+## Testing
+This project use mocha to test the basic functionality. To run tests, use the following command:
+
+```bash
+npm test
+```
+ 

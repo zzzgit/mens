@@ -1,20 +1,43 @@
-import { getUUID } from './utils.js'
+import { getTinyID, getUUID, md2plain } from './utils.js'
 import Local from './Local.js'
+import Entity from './Entity.js'
+import logger from './logger.js'
 
-// get and search will be performed in memory so that it is synchronous
-// adding, removing, and modifying will be performed in persistent storage so that it is asynchronous
+/**
+ * The Mens class handles the management of entities both in memory and in persistent storage.
+ * 
+ * - In-memory operations (get and search) are synchronous.
+ * - Persistent storage operations (adding, removing, and modifying) are asynchronous.
+ * 
+ * @class Mens
+ * @property {Array<Entity>} #memory - An array of Entity objects stored in memory.
+ * @property {Promise} #initialize - A promise that fulfills when the app finishes its initialization.
+ */
 class Mens{
 
-	// 在這裡聲明，好處是jsdoc 提示
 	/**
-	 * Entity arrow in memory
+	 * Entity arrow in memory, it's an array of Entity
 	 */
 	#memory = []
+
+	/**
+	 * A resolver to resolve the initialize promise
+	 */
+	#resolver
+
+	/**
+	 * A promise which will fullfill when the app finishinng its initialization
+	 */
+	initialize = new Promise((resolve)=> {
+		this.#resolver = resolve
+	})
 
 	/**
 	 * A Local instance to handle local dataSource
 	 */
 	#local = new Local()
+
+	#config = {}
 
 	get memory(){
 		return this.#memory
@@ -32,10 +55,42 @@ class Mens{
 		this.#local = value
 	}
 
-	constructor(){
+	get isTest(){
+		return this.#config.isTest
+	}
+
+	constructor(config = {}){
 		this.memory = []
-		this.local = new Local()
-		// this.remote = samael('mens', 'https://mens.herokuapp.com')
+		this.#config = config
+		this.local = new Local(config)
+		if(config.isTest){
+			logger.warn('[Mens][constructor] Mens is in test mode!')
+		}
+		this.#reload().then(()=> {
+			return this.#resolver()
+		}).catch((err)=> {
+			logger.error('[Mens][constructor] Failed to initialize:', err)
+		})
+	}
+
+	async #reload(){
+		const data = await this.local.loadEntities()
+		this.memory = data
+		logger.info('[Mens][#reload] Entities loaded:', { total: this.memory.length })
+	}
+
+	/**
+		 * Generate a new version, and update the history array
+		 * @param {*} entity the entity will be updated
+		 */
+	#updateVersion(entity){
+		const oldVersion = entity.version
+		entity.version = getTinyID(this.#config.isTest)
+		entity.mTime = new Date().valueOf()
+		logger.info(`[Mens][#updateVersion] Entity updated, ${oldVersion}-->${entity.version}`, { id: entity.id })
+		if(oldVersion){
+			entity.history.push(oldVersion)
+		}
 	}
 
 	/**
@@ -43,39 +98,41 @@ class Mens{
 	 * @param {*} content text in markdown format
 	 * @returns a promise that resolves to the entity added
 	 */
-	add(content){
+	async add(content){
+		await this.initialize
 		const id = this.generateId()
-		const raw = { id, content }
-		// this.memory.push(entity)
-		return this.local.add(raw).then((entity)=> {
-			const copy = { ...entity }
-			this.memory.push(copy)
-			return copy
-		})
+		const entity = new Entity(id, content)
+		entity.cTime = new Date().valueOf()
+		this.#updateVersion(entity)
+		const returnedEntity = await this.local.add(entity)
+		this.memory.push(returnedEntity)
+		logger.info('[Mens][add] Entity added:', { id })
+		return returnedEntity
 	}
 
 	/**
 	 * Remove entity from the dataSource.
-	 * @param {*} ids the id(s) of the entity
+	 * @param {*} ids the id(s) of the entity, if the ID not exist, it will success as well
 	 * @returns a promise that resolves to the id(s) of the removed entity
 	 */
-	remove(ids){
+	async remove(ids){
+		await this.initialize
 		if (!Array.isArray(ids)){
 			ids = [ids]
 		}
-		// 刪除跟修改不一樣，如果ID不存在，修改報錯，刪除不報錯
-		return this.local.remove(ids).then((ids)=> {
-			if(ids && ids.length){
-				ids.forEach(id=> this.#removeOne(id))
-				return ids
-			}
-			throw new Error('failed to remove!')
-		})
+		const removed = await this.local.remove(ids)
+		if(!removed || !removed.length){
+			throw new Error('[Mens][remove] Failed to remove!')
+		}
+		removed.forEach(id=> this.#removeOne(id))
+		logger.info('[Mens][remove] Entity removed:', { ids: removed })
+		return removed
 	}
 
 	#removeOne(id){
 		const index = this.memory.findIndex(item=> item.id === id)
 		if (index === -1){
+			logger.error('[Mens][removeOne] Entity not found:', { id })
 			return false
 		}
 		this.memory.splice(index, 1)
@@ -84,67 +141,58 @@ class Mens{
 
 	/**
 	 * Modify entity in the dataSource.
-	 * @param {*} id the id of the entity
-	 * @param {*} content text in markdown format
+	 * @param {*} entity the entity with new content. { id, content: "new content" }
 	 * @returns a promise that resolves to the entity modified, reject if no any entities are modified
 	 */
-	modify(id, content){
-		// check it's a single id
-		const entity = this.getEntity(id)
-		if (!entity || entity.length === 0){
-			const e = new Error(`Entity not found for id: ${id}`)
-			return Promise.reject(e)
+	async modify(entity){
+		await this.initialize
+		if(!entity.id){
+			throw new Error('[Mens][modify] Entity must have an id!')
 		}
-		return this.local.modify({ id, content }).then((entities)=> {
-			if (entities && entities.length){
-				this.#updateEntity(entity, entities[0])
-				return entity
-			}
-			throw new Error('failed to modify!')
-		})
+		this.#updateVersion(entity)
+		const modified = await this.local.modify(entity)
+		if (!modified){
+			throw new Error('[Mens][modify] Faild to modify!')
+		}
+		logger.info('[Mens][modify Entity modified:', { id: entity.id })
+		return entity
 	}
 
 	/**
-	 * Update the content of an entity with new data
-	 * @param {*} oldEntity 
-	 * @param {*} newEntity 
-	 */
-	#updateEntity(oldEntity, newEntity){
-		if(oldEntity.id !== newEntity.id){
-			console.log(9999, oldEntity, newEntity)
-			throw new Error('The old entity id is not equal to the new one id!')
-		}
-		oldEntity.content = newEntity.content
-		oldEntity.cTime = newEntity.cTime
-		oldEntity.mTime = newEntity.mTime
-	}
-
-	/**
-	 * Search for a entities by a keyword in the dataSource.
+	 * Search for entities, in memory, by a keyword 
 	 * @param {*} keyword  the keyword to search
-	 * @returns an array of entities that match the keyword
+	 * @returns an array of entities, in raw
 	 */
-	search(value){
-		const result = this.memory.filter(item=> item.content.includes(value))
-		return result
+	async search(value){
+		await this.initialize
+		const result = this.memory.filter(item=> md2plain(item.content).includes(value))
+		logger.info('[Mens][search] Entities found from memory:', { keyword: value, total: result.length })
+		return result.map(item=> Entity.toRaw(item))
 	}
 
 	/**
-	 * Get entity from the dataSource.
+	 * Get entity from the memory. 
 	 * @param {*} id the id of the entity
-	 * @returns the matched entity, or undefined if not found
+	 * @returns the matched entity in raw, or undefined if not found
 	 */
-	getEntity(id){
+	async getEntity(id){
+		await this.initialize
 		const result = this.memory.find(item=> item.id === id)
-		return result
+		if(!result){
+			return undefined
+		}
+		logger.info('[Mens][getEntity] Entity found from memory,', { id })
+		return Entity.toRaw(result)
 	}
 
 	/**
-	 * Get all the entities in the dataSource.
-	 * @returns all entities in the dataSource
+	 * Get all the entities from the memory.
+	 * @returns all entities, in raw
 	 */
-	getAllEntities(){
-		return [...this.memory]
+	async getAllEntities(){
+		await this.initialize
+		logger.info('[Mens][getAllEntities] All entities retrieved from memory.')
+		return this.memory.map(item=> Entity.toRaw(item))
 	}
 
 	/**
@@ -153,6 +201,17 @@ class Mens{
 	 */
 	generateId(){
 		return getUUID()
+	}
+
+	/**
+	 * Clear all entities from the dataSource.
+	 * @returns a promise that resolves when the entities are cleared
+	 */
+	async clear(){
+		await this.initialize
+		await this.local.clearEntities()
+		this.memory = []
+		logger.info('[Mens][clear] All entities cleared.')
 	}
 
 }

@@ -17,10 +17,12 @@ export default [
 				window: 'readonly',
 				global: 'readonly',
 				console: 'readonly',
+				process: 'readonly',
 			},
 		},
 		rules: {
 			'require-atomic-updates': [2, { allowProperties: true }],
+			// 'promise/prefer-await-to-callbacks': 0,
 		},
 	},
 ]
