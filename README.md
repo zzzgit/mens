@@ -10,7 +10,7 @@ This is a cli tool designed to manage ideas. Simply creat, delete, modify, and s
 To install `mens`, run cli:
 
 ```bash
-npm i mens -g
+npm i @zzznpm/mens -g
 ```
 
 ## Usage
