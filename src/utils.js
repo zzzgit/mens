@@ -13,7 +13,8 @@ export const getRoot = ()=> {
 
 export const getUUID = ()=> {
 	// return uuidv6()
-	return getRoot().crypto.randomUUID()
+	// return getRoot().crypto.randomUUID()
+	return getNanoID()
 }
 
 export const verifyUUID = (uuid)=> {
