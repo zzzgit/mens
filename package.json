@@ -9,6 +9,9 @@
   "bin": {
     "mens": "src/main.js"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "keywords": [
     "idea",
     "mens",
