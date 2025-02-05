@@ -7,52 +7,10 @@ import markdownit from 'markdown-it'
 import terminal from 'markdown-it-terminal'
 import honshinSelect from 'inquirer-honshin-select'
 import Entity from './Entity.js'
-import { parse, stringify } from 'smol-toml'
-import fs from 'fs'
-import { getConfigDir, writeToFile } from 'samael'
 import logger from './logger.js'
-import path from 'path'
-import defaultConfig from '../config/defaultConfig.js'
+import { getConfig, setConfig } from './configer.js'
 
 let config = {}
-
-/**
- * Get the configuration from the config file.
- * @returns the combined config
- */
-const getConfig = async()=> {
-	let result = Object.assign({}, defaultConfig)
-	if(fs.existsSync(getConfigFilePath())){
-		const obj = getRawConfig()
-		result = Object.assign({}, result, obj)
-	}
-	logger.info(`[main][getConfig] ${JSON.stringify(result)}`)
-	return result
-}
-
-const getRawConfig = ()=> {
-	const content = fs.readFileSync(getConfigFilePath(), 'utf8')
-	const obj = parse(content)
-	logger.info(`[main][getRawConfig] ${JSON.stringify(obj)}`)
-	return obj
-}
-
-/**
- * Get the configuration file path.
- * @returns {string} path
- */
-const getConfigFilePath = ()=> {
-	let p
-	const isTemporary = false
-	if(isTemporary){
-		p = path.join(import.meta.dirname, '../temp/', 'config.toml')
-	}else {
-		p = path.join(getConfigDir('mens'), 'config.toml')
-	}
-	logger.info(`[main][getConfigFilePath] Path: ${p}`)
-	console.log('config file pathe:', p)
-	return p
-}
 
 config = await getConfig()
 
@@ -108,16 +66,6 @@ const cmdRemove = async()=> {
 	const allEntities = await mens.getAllEntities()
 	const entity = allEntities.find(item=> item.id === args[0])
 	doDelete(entity)
-}
-
-const ensureConfigFile = async()=> {
-	if(!fs.existsSync(getConfigFilePath())){
-		const obj = {
-			version: '1.0',
-		}
-		await writeToFile(getConfigFilePath(), stringify(obj))
-		logger.info(`[main][#ensureLocalFile]: config file created, ${getConfigFilePath()}`)
-	}
 }
 
 /**
@@ -274,8 +222,6 @@ const cmdConfig = async()=> {
 		logger.error('[main][cmdConfig] Key and value are required for setting a configuration value.')
 		return null
 	}
-	await ensureConfigFile()
-	const obj = getRawConfig()
 	const keyString = args[0].trim()
 	let value = args[1]
 	if(cli.flags.smart){
@@ -287,22 +233,7 @@ const cmdConfig = async()=> {
 			value = Number(value)
 		}
 	}
-	if(keyString.includes('.')){
-		const tokens = keyString.split('.')
-		const key1 = tokens[0]
-		const key2 = tokens[1]
-		if(!obj[key1]){
-			obj[key1] = {}
-		}
-		if(typeof obj[key1] !== 'object'){
-			logger.error(`[main][cmdConfig] The key ${key1} is not an object!`)
-		}
-		obj[key1][key2] = value
-	}else{
-		obj[keyString] = value
-	}
-	await writeToFile(getConfigFilePath(), stringify(obj))
-	logger.info(`[main][cmdConfig] Config updated: ${keyString}=${value}`)
+	setConfig(keyString, value)
 }
 
 const cmdClear = async()=> {
