@@ -18,6 +18,7 @@ export default [
 				global: 'readonly',
 				console: 'readonly',
 				process: 'readonly',
+				fetch: 'readonly',
 			},
 		},
 		rules: {
