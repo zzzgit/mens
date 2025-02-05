@@ -22,9 +22,9 @@ class Local extends Persisted{
 	}
 
 	/**
-	 * Ensure that the local file exists
+	 * Ensure that the local file exists. Only be invoked by higher level.
 	 */
-	async #ensureLocalFile(){
+	async ensureLocalFile(){
 		if(!fs.existsSync(this.#getDataFilePath())){
 			this.meta = {
 				cTime: new Date().valueOf(),
@@ -35,7 +35,7 @@ class Local extends Persisted{
 				entities: [],
 			}
 			await writeToFile(this.#getDataFilePath(), yaml.dump(document))
-			logger.info(`[Local][#ensureLocalFile] Local file created:, ${this.#getDataFilePath()}`)
+			logger.info(`[Local][ensureLocalFile] Local file created:, ${this.#getDataFilePath()}`)
 		}
 	}
 
@@ -64,7 +64,6 @@ class Local extends Persisted{
 	 * @returns a promise that resolves to the object 
 	 */
 	async #loadDocument(){
-		await this.#ensureLocalFile()
 		const content = await readFromFile(this.#getDataFilePath())
 		const document = yaml.load(content)
 		this.meta = {
@@ -163,7 +162,6 @@ class Local extends Persisted{
 	 * @returns a promise that resolves when the entities are cleared
 	 */
 	async clearEntities(){
-		await this.#ensureLocalFile()
 		const document = await this.#loadDocument()
 		document.entities = []
 		document.mTime = new Date().valueOf()

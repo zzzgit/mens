@@ -66,7 +66,9 @@ class Mens{
 		if(config.isTest){
 			logger.warn('[Mens][constructor] Mens is in test mode!')
 		}
-		this.#reload().then(()=> {
+		const ensure = this.local.ensureLocalFile()
+		const reload = ensure.then(()=> this.#reload())
+		reload.then(()=> {
 			return this.#resolver()
 		}).catch((err)=> {
 			logger.error('[Mens][constructor] Failed to initialize:', err)
