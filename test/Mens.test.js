@@ -7,7 +7,7 @@ const mens = new Mens({
 	isTest: true,
 })
 
-const uuidLength = 36
+const uuidLength = 21
 
 describe('Mens', function(){
 	describe('#add()', function(){
