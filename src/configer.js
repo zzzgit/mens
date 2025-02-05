@@ -1,4 +1,4 @@
-import { writeToFile } from 'samael'
+import { readFromFile, writeToFile } from 'samael'
 import defaultConfig from './defaultConfig.js'
 import { parse, stringify } from 'smol-toml'
 import logger from './logger.js'
@@ -7,7 +7,7 @@ import fs from 'fs'
 
 const configVersion = '1.0'
 
-const ensureFileExists = async()=> {
+export const ensureFileExists = async()=> {
 	if(!fs.existsSync(getConfigFilePath())){
 		const obj = {
 			version: configVersion,
@@ -18,21 +18,18 @@ const ensureFileExists = async()=> {
 }
 
 /**
- * Get the configuration from the config file.
+ * Get the configuration from the config file. It will create the config file at the first time asynchronously.
  * @returns the combined config
  */
 const getConfig = async()=> {
-	let result = Object.assign({}, defaultConfig)
-	if(fs.existsSync(getConfigFilePath())){
-		const obj = getRawConfig()
-		result = Object.assign({}, result, obj)
-	}
+	// await ensureFileExists()
+	const result = Object.assign({}, defaultConfig, await getLocalConfig())
 	logger.info(`[config][getConfig] ${JSON.stringify(result)}`)
 	return result
 }
 
-const getRawConfig = ()=> {
-	const content = fs.readFileSync(getConfigFilePath(), 'utf8')
+const getLocalConfig = async()=> {
+	const content = await readFromFile(getConfigFilePath(), 'utf8')
 	const obj = parse(content)
 	logger.info(`[config][getRawConfig] ${JSON.stringify(obj)}`)
 	return obj
@@ -44,8 +41,8 @@ const getRawConfig = ()=> {
  * @param {*} value the value to set
  */
 const setConfig = async(keyString, value)=> {
-	await ensureFileExists()
-	const obj = getRawConfig()
+	// await ensureFileExists()
+	const obj = await getLocalConfig()
 	if(keyString.includes('.')){
 		const tokens = keyString.split('.')
 		const key1 = tokens[0]
@@ -63,8 +60,6 @@ const setConfig = async(keyString, value)=> {
 	await writeToFile(getConfigFilePath(), stringify(obj))
 	logger.info(`[config][setConfig] Config updated: ${keyString}=${value}`)
 }
-
-// console.log('config:', await getConfig())
 
 export {
 	getConfig,
