@@ -83,7 +83,7 @@ class Local extends Persisted{
 		this.#verifyEntity(entity)
 		const document = await this.#loadDocument()
 		if(document.entities.find(e=> e.id === entity.id)){
-			throw new Error('[Local][add] Entity id already exists!')
+			throw new Error(`[Local][add] Entity id ${entity.id} already exists!`)
 		}
 		document.entities.push(Entity.toRaw(entity))
 		const yamlStr = yaml.dump(document)
@@ -98,13 +98,13 @@ class Local extends Persisted{
 	 */
 	#verifyEntity(entity){
 		if (!entity.id){
-			throw new Error('entity must have an id')
+			throw new Error('Entity must have an id!')
 		}
 		if (!verifyUUID(entity.id)){
-			throw new Error('entity id is not a valid UUID')
+			throw new Error('Entity id is not a valid UUID!')
 		}
 		if (!entity.content){
-			throw new Error('entity must have content')
+			throw new Error('Entity must have content!')
 		}
 	}
 
@@ -144,7 +144,7 @@ class Local extends Persisted{
 		const document = await this.#loadDocument()
 		const found = document.entities.find(e=> e.id === entity.id)
 		if(!found){
-			throw new Error('[Local][modify] Entity not found!')
+			throw new Error('[Local][modify] Entity id not found!')
 		}
 		if(found.content === entity.content){
 			logger.warn('[Local][modify] Entity content is the same, no need to modify:', { id: entity.id, content: entity.content })

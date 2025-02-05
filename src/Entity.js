@@ -24,14 +24,14 @@ class Entity{
 
 	set id(value){
 		if (!verifyUUID(value)){
-			throw new Error('entity id is not a valid UUID')
+			throw new Error('[Entity] Entity id must be a valid UUID!')
 		}
 		this.#id = value
 	}
 
 	set content(value){
 		if (typeof value !== 'string'){
-			throw new Error('content must have a string')
+			throw new Error('[Entity] Content must have a string!')
 		}
 		this.#content = value
 	}
@@ -57,9 +57,8 @@ class Entity{
 	}
 
 	set dropped(value){
-		// must be a boolean value 
 		if (typeof value !== 'boolean'){
-			throw new Error('dropped must be a boolean value')
+			throw new Error('[Entity] dropped must be a boolean value!')
 		}
 		this.#dropped = value
 	}
