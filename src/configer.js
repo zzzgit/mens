@@ -1,8 +1,8 @@
-import { getConfigDir, writeToFile } from 'samael'
+import { writeToFile } from 'samael'
 import defaultConfig from './defaultConfig.js'
 import { parse, stringify } from 'smol-toml'
 import logger from './logger.js'
-import path from 'path'
+import { getConfigFilePath } from './utils.js'
 import fs from 'fs'
 
 const configVersion = '1.0'
@@ -39,23 +39,6 @@ const getRawConfig = ()=> {
 }
 
 /**
- * Get the configuration file path.
- * @returns {string} path
- */
-const getConfigFilePath = ()=> {
-	let p
-	const isTemporary = true
-	if(isTemporary){
-		p = path.join(import.meta.dirname, '../temp/', 'config.toml')
-	}else {
-		p = path.join(getConfigDir('mens'), 'config.toml')
-	}
-	logger.info(`[config][getConfigFilePath] Path: ${p}`)
-	console.log('config file pathe:', p)
-	return p
-}
-
-/**
  * Set a configuration value.
  * @param {*} keyString strucutred key string, like foo.bar.
  * @param {*} value the value to set
@@ -85,6 +68,5 @@ const setConfig = async(keyString, value)=> {
 
 export {
 	getConfig,
-	getConfigFilePath,
 	setConfig,
 }

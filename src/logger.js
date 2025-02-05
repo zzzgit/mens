@@ -1,37 +1,26 @@
 import * as winston from 'winston'
 import 'winston-daily-rotate-file'
 import { createLogger, format, transports } from 'winston'
-import { getDataDir } from 'samael'
-import path from 'path'
+import { getLogFilePath } from './utils.js'
 
-const getLogFilePath = ()=> {
-	let p
-	const isTemporary = false
-	if(isTemporary){
-		p = path.join(import.meta.dirname, '../log/')
-	}else{
-		p = path.join(getDataDir('mens'), 'log/')
-	}
-	// console.log(`[logger][getDataFilePath] log file path: ${p}`)
-	return p
-}
+const logFilePath = getLogFilePath()
 const baseConfig = {
 	filename: 'mens-%DATE%.log',
 	datePattern: 'YYYY-MM-DD',
 	zippedArchive: true,
 	maxSize: '20m',
 	maxFiles: '14d',
-	dirname: getLogFilePath(),
+	dirname: logFilePath,
 }
-const combined = new winston.transports.DailyRotateFile(Object.assign({}, baseConfig, { filename: 'combined.%DATE%.log', auditFile: `${getLogFilePath()}audit.combined.json` }))
+const combined = new winston.transports.DailyRotateFile(Object.assign({}, baseConfig, { filename: 'combined.%DATE%.log', auditFile: `${logFilePath}audit.combined.json` }))
 const info = new winston.transports.DailyRotateFile(Object.assign({}, baseConfig, {
-	filename: 'info.%DATE%.log', level: 'info', auditFile: `${getLogFilePath()}audit.info.json`,
+	filename: 'info.%DATE%.log', level: 'info', auditFile: `${logFilePath}audit.info.json`,
 }))
 const warn = new winston.transports.DailyRotateFile(Object.assign({}, baseConfig, {
-	filename: 'warn.%DATE%.log', level: 'warn', auditFile: `${getLogFilePath()}audit.warn.json`,
+	filename: 'warn.%DATE%.log', level: 'warn', auditFile: `${logFilePath}audit.warn.json`,
 }))
 const error = new winston.transports.DailyRotateFile(Object.assign({}, baseConfig, {
-	filename: 'error.%DATE%.log', level: 'error', auditFile: `${getLogFilePath()}audit.error.json`,
+	filename: 'error.%DATE%.log', level: 'error', auditFile: `${logFilePath}audit.error.json`,
 }))
 const csl = new transports.Console({ level: 'warn', format: format.colorize({ all: true }) })
 
@@ -59,10 +48,10 @@ const logger = createLogger({
 		error,
 	],
 	exceptionHandlers: [
-		new transports.File({ filename: `${getLogFilePath()}exceptions.log` }),
+		new transports.File({ filename: `${logFilePath}exceptions.log` }),
 	],
 	rejectionHandlers: [
-		new transports.File({ filename: `${getLogFilePath()}rejections.log` }),
+		new transports.File({ filename: `${logFilePath}rejections.log` }),
 	],
 	exitOnError: true,
 })
