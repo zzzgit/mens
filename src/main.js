@@ -2,19 +2,18 @@
 
 import meow from 'meow'
 import Mens from './Mens.js'
-import { confirm, editor } from '@inquirer/prompts'
+import { confirm, editor, input, select } from '@inquirer/prompts'
 import markdownit from 'markdown-it'
 import terminal from 'markdown-it-terminal'
 import honshinSelect from 'inquirer-honshin-select'
 import Entity from './Entity.js'
 import logger from './logger.js'
-import { getConfig, setConfig } from './configer.js'
+import { ensureFileExists as ensureConfigFileExists, getConfig, setConfig } from './configer.js'
+import { createGist, sync } from './remote.js'
 
-let config = {}
+let config,
+	mens
 
-config = await getConfig()
-
-const mens = new Mens(config)
 const md = markdownit()
 md.use(terminal)
 
@@ -216,6 +215,12 @@ const cmdSearch = async()=> {
 	showList(results)
 }
 
+const todo = {
+	NOTHING: 0,
+	TOKEN: 1,
+	GISTID: 2,
+}
+
 const cmdConfig = async()=> {
 	if (args.length < 2){
 		console.error('Key and value are required for setting a configuration value.')
@@ -234,6 +239,10 @@ const cmdConfig = async()=> {
 		}
 	}
 	setConfig(keyString, value)
+}
+
+const cmdSync = async()=> {
+	sync(config, mens)
 }
 
 const cmdClear = async()=> {
@@ -262,6 +271,7 @@ const defination = `
     list                List all entities
 	config <key> <value> Set a configuration value
     clear               Clear all entities
+	sync				Sync with remote
 
   Options
     --help -s			Show help
@@ -347,14 +357,64 @@ const parseCommand = async()=> {
 		cmdConfig()
 		break
 
+	case 'sync':
+		cmdSync()
+		break
+
 	default:
 		cli.showHelp()
 		break
 	}
 }
 
-parseCommand()
-	.catch((err)=> {
-		logger.error(`[main][parseCommand] Got error: ${err}`)
+const init = async()=> {
+	await ensureConfigFileExists()
+	config = await getConfig()
+	mens = await new Mens(config)
+	if(!config.token){
+		return todo.TOKEN
+	}
+	if(!config.gistId){
+		return todo.GISTID
+	}
+	return todo.NOTHING
+}
+
+const chore = await init()
+if(chore === todo.TOKEN){
+	console.warn('Gist token has not been set!')
+	logger.warn('[main] Set token first time.')
+	const answer = await input({ message: 'Enter your token' })
+	setConfig('token', answer)
+}else if (chore === todo.GISTID){
+	console.warn('GistId has not been set!')
+	logger.warn('[main] Set gistId the first time.')
+	const choice = await select({
+		message: 'You can do the following:',
+		choices: [
+			{
+				name: 'Use an existing gist',
+				value: 'exsiting',
+				description: 'Input the gistId.',
+			},
+			{
+				name: 'Create a new gist',
+				value: 'creating',
+				description: 'Create a new gist for mens automatically.',
+			},
+		],
 	})
+	if(choice === 'creating'){
+		const gistId = await createGist(config.token)
+		setConfig('gistId', gistId)
+	}else{
+		const answer = await input({ message: 'Enter your gistId' })
+		setConfig('gistId', answer)
+	}
+}else if(chore === todo.NOTHING){
+	parseCommand()
+		.catch((err)=> {
+			logger.error(`[main][parseCommand] Got error: ${err}`)
+		})
+}
 
