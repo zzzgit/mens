@@ -32,9 +32,9 @@ const timestampFormat = format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' })
 const myFormat = format.printf(({
 	timestamp, message, level, ...rest
 })=> {
-	let restString = ''
-	if (Object.keys(rest).length){
-		restString = '' + JSON.stringify(rest)
+	let restString = 'undefined'
+	if(rest !== undefined){
+		restString = JSON.stringify(rest)
 	}
 	return `${timestamp} ${message} ${restString}(${level})`
 })
