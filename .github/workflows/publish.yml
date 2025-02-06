@@ -15,6 +15,9 @@ jobs:
       - name: check version
         id: check
         uses: EndBug/version-check@v2
+        with:
+          static-checking: localIsNew
+          file-url: https://unpkg.com/@zzznpm/mens@latest/package.json
       - name: No version update in package.json
         if: steps.check.outputs.changed != 'true'
         run: |
