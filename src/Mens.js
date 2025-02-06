@@ -188,6 +188,14 @@ class Mens{
 	}
 
 	/**
+	 * Save the merged data into locale
+	 * @param {*} entities 
+	 */
+	unsafeSave(entities){
+		this.#local.unsafeSave(entities)
+	}
+
+	/**
 	 * Get all the entities from the memory.
 	 * @returns all entities, in raw
 	 */

@@ -74,6 +74,20 @@ class Local extends Persisted{
 	}
 
 	/**
+	 * unsafely save the merged data into local. It will only be invoked by higher level API.
+	 * @param {*} entities 
+	 */
+	async unsafeSave(entities){
+		//
+		const document = await this.#loadDocument()
+		document.entities = entities
+		document.mTime = new Date().valueOf()
+		const yamlStr = yaml.dump(document)
+		await writeToFile(this.#getDataFilePath(), yamlStr)
+		logger.info('[Local][unsafeSave] Entities saved.')
+	}
+
+	/**
 	 * Add an entity to the local file
 	 * @param {*} entity the entity to be added, {id, content}
 	 * @returns a promise that resolves to the entity added
@@ -85,6 +99,7 @@ class Local extends Persisted{
 			throw new Error(`[Local][add] Entity id ${entity.id} already exists!`)
 		}
 		document.entities.push(Entity.toRaw(entity))
+		document.mTime = new Date().valueOf()
 		const yamlStr = yaml.dump(document)
 		await writeToFile(this.#getDataFilePath(), yamlStr)
 		logger.info('[Local][add] entity added:', { id: entity.id })
