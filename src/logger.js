@@ -22,7 +22,11 @@ const warn = new winston.transports.DailyRotateFile(Object.assign({}, baseConfig
 const error = new winston.transports.DailyRotateFile(Object.assign({}, baseConfig, {
 	filename: 'error.%DATE%.log', level: 'error', auditFile: `${logFilePath}audit.error.json`,
 }))
-const csl = new transports.Console({ level: 'warn', format: format.colorize({ all: true }) })
+const csl = new transports.Console({
+	level: 'warn',
+	format: format.colorize({ all: true }),
+	silent: true,
+})
 
 const timestampFormat = format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' })
 const myFormat = format.printf(({
