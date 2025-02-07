@@ -1,18 +1,21 @@
 import { Octokit } from '@octokit/rest'
+import { graphql } from '@octokit/graphql'
 import logger from './logger.js'
 import { getTinyID } from './utils.js'
 import yaml from 'js-yaml'
 import { setConfig } from './configer.js'
+import { green } from 'ansis'
 
 const metaFileName = '#mens.yaml'
 
-let octokit
+let octokit,
+	octokitGraphql
 
 /**
  * Fetch files from the gist
  * @returns the file content as an array
  */
-const fetchFiles = async(token, id)=> {
+const fetchFilesRest = async(token, id)=> {
 	if(!octokit){
 		octokit = new Octokit({
 			auth: token,
@@ -27,6 +30,7 @@ const fetchFiles = async(token, id)=> {
 	if(response.status !== 200){
 		throw new Error(`[remote][getGist] Failed to get the gist by ID ${id}.`)
 	}
+	setConfig('gist.node', response.data.node_id)
 	const result = []
 	for (const key in response.data.files){
 		if (key === metaFileName){ continue }
@@ -39,14 +43,22 @@ export const sync = async(config, mens)=> {
 	const local = await mens.getAllEntities()
 	let remoteFiles
 	try{
-		remoteFiles = await fetchFiles(config.token, config.gistId)
+		if(!config.gist.node){
+			remoteFiles = await fetchFilesRest(config.token, config.gist.id)
+		}else{
+			const { node } = await fetchFilesGql(config.gist.node)
+			const files = node.files.filter(item=> item.name !== metaFileName)
+			remoteFiles = files.map(item=> item.text)
+		}
 	}catch(e){
 		logger.error(`[remote][sync] Failed to fetch files from the gist with status ${e.status}.`, e)
-		if(e.status === 404){
-			console.error('找不到，重新創建.')
-			const id = await createGist(config.token)
-			config.gistId = id
-			setConfig('gistId', id)
+		if(!config.gist.node && e.status === 404){
+			console.error(green('Gist with ID not found. Creating a new one...'))
+			const { id, node } = await createGist(config.token)
+			config.gist.id = id
+			config.gist.node = node
+			setConfig('gist.id', id)
+			setConfig('gist.node', node)
 		}
 		return false
 	}
@@ -64,10 +76,6 @@ export const sync = async(config, mens)=> {
 	})
 	logger.info('[remote][sync] Found:', found)
 	logger.info('[remote][sync] Not found:', notFound)
-	logger.info('22222:', {})
-	logger.info('33333:', { foo: 3 })
-	logger.info('44444:', [])
-	logger.info('55555:', [22, 33, 44, {}])
 	found.forEach((remoteEntity)=> {
 		const localEntity = local.find(item=> item.id === remoteEntity.id)
 		merge(localEntity, remoteEntity)
@@ -77,6 +85,7 @@ export const sync = async(config, mens)=> {
 	})
 	mens.unsafeSave(local)
 	updateRemote(config, local)
+	return true
 }
 
 /**
@@ -92,11 +101,11 @@ const updateRemote = async(config, local)=> {
 		}
 	})
 	const response = await octokit.rest.gists.update({
-		gist_id: config.gistId,
+		gist_id: config.gist.id,
 		files,
 	})
 	if(response.status !== 200){
-		throw new Error('[remote][updateRemote] Failed to update the gist!', response.status)
+		throw new Error(`[remote][updateRemote] Failed to update the gist with response status: ${response.status}!`)
 	}
 	logger.info('[remote][updateRemote] Updated the gist.')
 }
@@ -120,11 +129,12 @@ export const createGist = async(token)=> {
 		public: false,
 	})
 	if(response.status !== 201){
-		throw new Error('[remote][createGist] Failed to create!', response.status)
+		throw new Error(`[remote][createGist] Failed to create with response status: ${response.status}!`)
 	}
 	const id = response.data.id
+	const node = response.data.node_id
 	logger.info('[remote][createGist] Created gist with ID:', id)
-	return id
+	return { id, node }
 }
 
 const COMPARISON = {
@@ -184,4 +194,39 @@ const merge = (local, remote)=> {
 	local.version = getTinyID()
 	local.mTime = new Date().valueOf()
 	return local
+}
+
+async function fetchFilesGql(config){
+	if(!octokitGraphql){
+		octokitGraphql = graphql.defaults({
+			headers: {
+				authorization: `token ${config.token}`,
+			},
+		})
+	}
+	const { node } = await octokitGraphql({
+		query: `
+        query ($nodeID: ID!) {
+          node(id: $nodeID) {
+            ... on Gist {
+              id
+              description
+              createdAt
+              files {
+                name
+                text
+              }
+            }
+          }
+        }
+      `,
+		nodeID: config.gist.node,
+	})
+
+	if (node){
+		const files = node.files.filter(item=> item.name !== metaFileName)
+		const result = files.map(item=> item.text)
+		return result
+	}
+	return []
 }
