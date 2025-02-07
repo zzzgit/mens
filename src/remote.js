@@ -58,6 +58,9 @@ export const sync = async(config, mens)=> {
 			await setConfig('gist.id', id)
 			await setConfig('gist.node', node)
 		}
+		if(config.gist.node){
+			//
+		}
 		return 11
 	}
 
@@ -98,6 +101,11 @@ const updateRemote = async(config, local)=> {
 			content: yaml.dump(entity),
 		}
 	})
+	if(!octokit){
+		octokit = new Octokit({
+			auth: config.token,
+		})
+	}
 	const response = await octokit.rest.gists.update({
 		gist_id: config.gist.id,
 		files,
