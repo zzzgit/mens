@@ -2,7 +2,7 @@
   "name": "@zzznpm/mens",
   "description": "All about idea management.",
   "type": "module",
-  "version": "0.0.41",
+  "version": "0.0.42",
   "author": "zzzgit",
   "license": "MIT",
   "main": "main.js",
