@@ -46,9 +46,7 @@ export const sync = async(config, mens)=> {
 		if(!config.gist.node){
 			remoteFiles = await fetchFilesRest(config.token, config.gist.id)
 		}else{
-			const { node } = await fetchFilesGql(config.gist.node)
-			const files = node.files.filter(item=> item.name !== metaFileName)
-			remoteFiles = files.map(item=> item.text)
+			remoteFiles = await fetchFilesGql(config)
 		}
 	}catch(e){
 		logger.error(`[remote][sync] Failed to fetch files from the gist with status ${e.status}.`, e)
@@ -60,7 +58,7 @@ export const sync = async(config, mens)=> {
 			setConfig('gist.id', id)
 			setConfig('gist.node', node)
 		}
-		return false
+		return 11
 	}
 
 	const found = []
@@ -85,7 +83,7 @@ export const sync = async(config, mens)=> {
 	})
 	mens.unsafeSave(local)
 	updateRemote(config, local)
-	return true
+	return 0
 }
 
 /**

@@ -2,6 +2,7 @@
 
 import meow from 'meow'
 import Mens from './Mens.js'
+import { createSpinner } from 'nanospinner'
 import { confirm, editor, input, select } from '@inquirer/prompts'
 import { green, red, yellow } from 'ansis'
 import markdownit from 'markdown-it'
@@ -12,6 +13,7 @@ import logger from './logger.js'
 import { ensureFileExists as ensureConfigFileExists, getConfig, setConfig } from './configer.js'
 import { createGist, sync } from './remote.js'
 
+const spinner = createSpinner(' ')
 let config,
 	mens
 
@@ -243,7 +245,13 @@ const cmdConfig = async()=> {
 }
 
 const cmdSync = async()=> {
-	sync(config, mens)
+	spinner.start('Syncing...')
+	const result = await sync(config, mens)
+	if(result === 0){
+		spinner.success('Synced successfully.')
+	}else{
+		spinner.error('Failed to sync.')
+	}
 }
 
 const cmdClear = async()=> {
@@ -406,7 +414,9 @@ if(chore === todo.TOKEN){
 		],
 	})
 	if(choice === 'creating'){
+		spinner.start('Creating a new Gist...')
 		const { id, node } = await createGist(config.token)
+		spinner.success('Created a new Gist.')
 		setConfig('gist.id', id)
 		setConfig('gist.node', node)
 	}else{
