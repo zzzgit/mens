@@ -375,7 +375,7 @@ const init = async()=> {
 	if(!config.token){
 		return todo.TOKEN
 	}
-	if(!config.gistId){
+	if(!config.gist?.id){
 		return todo.GISTID
 	}
 	return todo.NOTHING
@@ -388,15 +388,15 @@ if(chore === todo.TOKEN){
 	const answer = await input({ message: 'Enter your token' })
 	setConfig('token', answer)
 }else if (chore === todo.GISTID){
-	console.warn(yellow('GistId has not been set!'))
-	logger.warn('[main] Set gistId the first time.')
+	console.warn(yellow('Gist ID has not been set!'))
+	logger.warn('[main] Set gist ID the first time.')
 	const choice = await select({
 		message: 'You can do the following:',
 		choices: [
 			{
 				name: 'Use an existing gist',
 				value: 'exsiting',
-				description: 'Input the gistId.',
+				description: 'Input the Gits ID.',
 			},
 			{
 				name: 'Create a new gist',
@@ -406,11 +406,12 @@ if(chore === todo.TOKEN){
 		],
 	})
 	if(choice === 'creating'){
-		const gistId = await createGist(config.token)
-		setConfig('gistId', gistId)
+		const { id, node } = await createGist(config.token)
+		setConfig('gist.id', id)
+		setConfig('gist.node', node)
 	}else{
-		const answer = await input({ message: 'Enter your gistId' })
-		setConfig('gistId', answer)
+		const answer = await input({ message: 'Enter your Gist ID' })
+		setConfig('gist.id', answer)
 	}
 }else if(chore === todo.NOTHING){
 	parseCommand()
