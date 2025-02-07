@@ -3,6 +3,7 @@
 import meow from 'meow'
 import Mens from './Mens.js'
 import { confirm, editor, input, select } from '@inquirer/prompts'
+import { green, red, yellow } from 'ansis'
 import markdownit from 'markdown-it'
 import terminal from 'markdown-it-terminal'
 import honshinSelect from 'inquirer-honshin-select'
@@ -58,7 +59,7 @@ const cmdAdd = async()=> {
 
 const cmdRemove = async()=> {
 	if (args.length < 1){
-		console.error('ID is required for removing an entity.')
+		console.error(red('ID is required for removing an entity.'))
 		logger.error('[main][cmdRemove] ID is required for removing an entity.')
 		return null
 	}
@@ -78,7 +79,7 @@ const doEdit = async(id, entity, newContent)=> {
 		entity = Entity.fromRaw(entity)
 	}
 	if(!id){
-		console.error('ID is required for modifying an entity.')
+		console.error(red('ID is required for modifying an entity.'))
 		logger.error('[main][doEdit] ID is required for modifying an entity.')
 		return null
 	}
@@ -92,7 +93,7 @@ const doEdit = async(id, entity, newContent)=> {
 	}
 	newContent = newContent.trim()
 	if (newContent === originalContent){
-		console.log('No changes, modification aborted.')
+		console.log(yellow('No changes, modification aborted.'))
 		logger.info('[main][doEdit] No changes, modification aborted.')
 		return null
 	}
@@ -109,7 +110,7 @@ const cmdModify = async()=> {
 
 const cmdGet = async()=> {
 	if (args.length < 1){
-		console.error('ID is required for getting an entity.')
+		console.error(red('ID is required for getting an entity.'))
 		logger.error('[main][cmdGet] ID is required for getting an entity.')
 		return null
 	}
@@ -129,7 +130,7 @@ const cmdList = async()=> {
  */
 const showList = async(entities)=> {
 	if (!entities.length){
-		console.log('No entities found!')
+		console.log(yellow('No entities found!'))
 		logger.warn('[main][showList] No entities found!')
 		return null
 	}
@@ -189,10 +190,10 @@ const cmdInfo = async()=> {
 		},
 
 	}
-	console.log('Version:\t', info.version)
-	console.log('Total entities:\t', info.entity.total)
+	console.log('Version:\t', green(info.version))
+	console.log('Total entities:\t', green(info.entity.total))
 	if(config.isTest){
-		console.warn('Test mode is enabled.')
+		console.warn(yellow('Test mode is enabled.'))
 	}
 	console.log(`Create time:\t${info.time.created}`)
 	console.log(`Last modified:\t${info.time.modified}`)
@@ -223,7 +224,7 @@ const todo = {
 
 const cmdConfig = async()=> {
 	if (args.length < 2){
-		console.error('Key and value are required for setting a configuration value.')
+		console.error(red('Key and value are required for setting a configuration value.'))
 		logger.error('[main][cmdConfig] Key and value are required for setting a configuration value.')
 		return null
 	}
@@ -382,12 +383,12 @@ const init = async()=> {
 
 const chore = await init()
 if(chore === todo.TOKEN){
-	console.warn('Gist token has not been set!')
+	console.warn(yellow('Token has not been set!'))
 	logger.warn('[main] Set token first time.')
 	const answer = await input({ message: 'Enter your token' })
 	setConfig('token', answer)
 }else if (chore === todo.GISTID){
-	console.warn('GistId has not been set!')
+	console.warn(yellow('GistId has not been set!'))
 	logger.warn('[main] Set gistId the first time.')
 	const choice = await select({
 		message: 'You can do the following:',

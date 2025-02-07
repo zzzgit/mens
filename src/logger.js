@@ -2,6 +2,7 @@ import * as winston from 'winston'
 import 'winston-daily-rotate-file'
 import { createLogger, format, transports } from 'winston'
 import { getLogFilePath } from './utils.js'
+import { red } from 'ansis'
 
 const logFilePath = getLogFilePath()
 const baseConfig = {
@@ -61,7 +62,7 @@ const logger = createLogger({
 })
 
 logger.on('error', function(err){
-	console.error('logger error', err)
+	console.error(red('logger error'), err)
 })
 
 process.on('unhandledRejection', (reason, promise)=> {
