@@ -40,6 +40,9 @@ mens modify ID "new content"
 ## Contributing
 Contributions are welcome! 
 
+## TODO
+- Try to use an emitter to improve inter-layer communication.
+- Find a way to make logger and configer interdependent.
 
 ## Testing
 This project use mocha to test the basic functionality. To run tests, use the following command:
@@ -47,4 +50,3 @@ This project use mocha to test the basic functionality. To run tests, use the fo
 ```bash
 npm test
 ```
- 
