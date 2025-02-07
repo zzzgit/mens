@@ -1,6 +1,7 @@
 import js from 'eslint-config-janus/js.js'
 import mocha from 'eslint-config-janus/mocha.js'
 import { jsify } from 'eslint-config-janus/utils.js'
+import globals from 'globals'
 
 const testGlob = 'test/**/*.js'
 const testTsArr = jsify(mocha, { files: [testGlob] })
@@ -15,10 +16,7 @@ export default [
 			},
 			globals: {
 				window: 'readonly',
-				global: 'readonly',
-				console: 'readonly',
-				process: 'readonly',
-				fetch: 'readonly',
+				...globals.node,
 			},
 		},
 		rules: {
