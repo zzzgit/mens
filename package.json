@@ -52,7 +52,9 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^7.2.4",
+    "@octokit/graphql": "^8.2.0",
     "@octokit/rest": "^21.1.0",
+    "ansis": "^3.10.0",
     "base62": "^2.0.2",
     "inquirer": "^12.3.3",
     "inquirer-honshin-select": "^0.0.4",
