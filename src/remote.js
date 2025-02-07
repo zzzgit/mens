@@ -55,8 +55,8 @@ export const sync = async(config, mens)=> {
 			const { id, node } = await createGist(config.token)
 			config.gist.id = id
 			config.gist.node = node
-			setConfig('gist.id', id)
-			setConfig('gist.node', node)
+			await setConfig('gist.id', id)
+			await setConfig('gist.node', node)
 		}
 		return 11
 	}

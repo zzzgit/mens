@@ -417,8 +417,8 @@ if(chore === todo.TOKEN){
 		spinner.start('Creating a new Gist...')
 		const { id, node } = await createGist(config.token)
 		spinner.success('Created a new Gist.')
-		setConfig('gist.id', id)
-		setConfig('gist.node', node)
+		await setConfig('gist.id', id)
+		await setConfig('gist.node', node)
 	}else{
 		const answer = await input({ message: 'Enter your Gist ID' })
 		setConfig('gist.id', answer)
