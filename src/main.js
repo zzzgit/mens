@@ -241,7 +241,7 @@ const cmdConfig = async()=> {
 			value = Number(value)
 		}
 	}
-	setConfig(keyString, value)
+	await setConfig(keyString, value)
 }
 
 const cmdSync = async()=> {
@@ -328,7 +328,7 @@ const cmd = commandAliases[command] || command
 /**
  * Parses and executes the command provided by the user.
  */
-const parseCommand = async()=> {
+const parseCommand = ()=> {
 	switch (cmd){
 	case 'add':
 		cmdAdd()
