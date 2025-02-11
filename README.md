@@ -43,6 +43,7 @@ Contributions are welcome!
 ## TODO
 - Try to use an emitter to improve inter-layer communication.
 - Find a way to make logger and configer interdependent.
+- Combining a deleted entity
 
 ## Testing
 This project use mocha to test the basic functionality. To run tests, use the following command:
